@@ -7,15 +7,14 @@ ENV PKG_CONFIG_PATH="/rootfs/usr/share/pkgconfig:/rootfs/usr/lib/arm-linux-gnuea
 RUN mkdir /vscode
 RUN mkdir /out
 
-RUN curl -sL https://deb.nodesource.com/setup_8.x | bash -
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
 RUN apt-get install nodejs
 RUN npm install -g yarn
 RUN yarn add global \
   gulp \
   gulp-watch
 
-ENV npm_config_arch=arm
-ENV VSCODE_VERSION=1.30.0
+ENV VSCODE_VERSION=1.32.3
 
 RUN curl -L https://github.com/microsoft/vscode/archive/$VSCODE_VERSION.tar.gz > vscode.tar.gz
 RUN tar --strip-components=1 -C /vscode -xf vscode.tar.gz
@@ -30,9 +29,11 @@ RUN cp -rv ../resources/app/* .
 RUN sed -i 's/.*darwinCredits.*//' product.json
 RUN sed -i 's/.*electronRepository.*//' product.json
 
+ENV npm_config_arch=arm
 RUN yarn install --ignore-scripts
-COPY vscode-sqlite.gyp node_modules/vscode-sqlite/binding.gyp
+ENV npm_config_arch=armv7l
 RUN yarn install
+COPY gulpfile.vscode.js build
 RUN yarn run gulp vscode-linux-arm-min
 RUN yarn run gulp vscode-linux-arm-build-deb
 ENTRYPOINT [ "sh", "-c", "cp -v /vscode/.build/linux/deb/armhf/deb/*.deb /out/vscode-$VSCODE_VERSION.deb" ]
